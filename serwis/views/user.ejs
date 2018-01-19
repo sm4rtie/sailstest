@@ -8,10 +8,196 @@
     document.getElementsByClassName('header')[0].style.backgroundColor = '#118798';
   }, 0);
 </script>
+<script src="js/dependencies/jquery/jquery-2.1.4.min.js"></script>
+<script src="js/bootstrap/bootstrap-3.3.5.min.js"></script>
+<link rel="stylesheet" type="text/css" href="bootstrap/bootstrap.css">
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 
-<% if(result.role == 'client'){ %>
-<h1 class="header1">Hello <%= result.firstName%> client! </h1>
+<% if(user.role == 'client'){ %>
+<h1 class="header1">Hello <%= user.firstName%> client! </h1>
 <% } else{ %>
-<h1 class="header1">Hello <%= result.firstName%> employee! </h1>
+<h1 class="header1">Hello <%= user.firstName%> employee! </h1>
 <% } %>
-<h1 class="header1"> hi <%= orders.status%> ! </h1>
+<div>
+  <table  class="table table-hover">
+    <thead>
+    <tr>
+    <th>ID</th>
+    <!--<th>Przyjeto</th>-->
+    <th>Product</th>
+    <th>Status</th>
+    </tr>
+    </thead>
+    <tbody>
+    <% orders.forEach(function(order) { %>
+    <tr id="allOrders">
+      <td id="orderId"><%= order.id%></td>
+     <!-- <td><%= order.createdAt%></td>-->
+      <td><%= order.product%></td>
+      <% if(user.role == 'client'){ %>
+      <td><%= order.status%></td>
+      <% } else{ %>
+      <td>
+      <select id="updateStatus" name="updateStatus">
+          <% statuses.forEach(function(status) { %>
+          <option value="<%= status %>"><%= status %></option>
+        <% }); %>
+      </select>
+      </td>
+      <td> <button type="submit" class='btn btn-primary btn-xs' name="updateOrder" id="updateOrder">Save</button></td>
+      <% } %>
+      <% }); %>
+    </tr>
+    </tbody>
+  </table>
+<script>
+  $(document).ready(function() {
+  $("#updateOrder").click(function() {
+    let $orderId = $(this).closest("tr").find("#orderId").text();
+    alert($orderId);
+    //var orderId = $('#allOrders').find("td:first").html();
+    $.ajax({
+      type: "POST",
+      url: "/order/update",
+      data: '{status: "' + $("#updateStatus").val() + '", orderId: "' + $orderId + '"}',
+      contentType: "application/json; charset=utf-8",
+      dataType: "json",
+      success: function (response) {
+        alert("Hello: " + response.status + " .\nCurrent Date and Time: " + response.DateTime);
+      },
+      failure: function (response) {
+        alert(response.responseText);
+      },
+      error: function (response) {
+        alert(response.responseText);
+      },
+    });
+  });
+  });
+</script>
+</div>
+<div>
+  <% if (user.role == "employee") { %>
+  <button class="button button-primary" id="newUser">New User</button>
+  <button class="button button-primary" id="newOrder">New Order</button>
+
+  <form method="post" id="newUserForm" action="/user/create">
+    <div class="form-group">
+      <label for="newUserFirstName">First Name</label>
+      <input type="text" class="form-control" id="newUserFirstName" name="newUserFirstName"placeholder="First Name">
+    </div>
+    <div class="form-group">
+      <label for="newUserLastName">Last Name</label>
+      <input type="text" class="form-control" id="newUserLastName" name="newUserLastName" placeholder="Last Name">
+    </div>
+    <div class="form-group">
+      <label for="newUserEmail">Email</label>
+      <input type="text" class="form-control" id="newUserEmail" name="newUserEmail"placeholder="email@address.com">
+    </div>
+    <div class="form-group">
+      <label for="newUserPassword">Password</label>
+      <input type="password" class="form-control" id="newUserPassword" name="newUserPassword">
+    </div>
+    <div class="form-group">
+      <label for="newUserPhone">Phone</label>
+      <input type="text" class="form-control" id="newUserPhone" name="newUserPhone" placeholder="123-456-789">
+    </div>
+    <div>
+      <button type="submit" class="btn btn-primary" id="createNewUser">Submit</button>
+    </div>
+  </form>
+  <script>
+    $(document).ready(function() {
+     // var par = $('p');
+      $("#newUserForm").hide();
+      $("#newUser").click(function () {
+        $("#newUserForm").slideToggle("slow");
+      });
+    });
+    $("createNewUser").click(function() {
+      $.ajax({
+        type: "POST",
+        url: "/user/create",
+        data: '{firstName: "' + $("#newUserFirstName").val() + '", lastName: "' + $("#newUserLastName").val() + '", email: "' + $("#newUserEmail").val() + '", password: "' + $("#newUserPassword").val() + '"}',
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function (response) {
+          alert("Hello: " + response.firstName + " .\nCurrent Date and Time: " + response.DateTime);
+        },
+        failure: function (response) {
+          alert(response.responseText);
+        },
+        error: function (response) {
+          alert(response.responseText);
+        },
+      });
+    });
+  </script>
+
+  <form method="post" id="newOrderForm" action="/order/create">
+
+    <div class="form-group">
+      <label for="newOrderClient">Client email</label>
+      <input type="email" class="form-control" id="newOrderClient" name="newOrderClient" placeholder="client@email.com">
+    </div>
+    <div class="form-group">
+      <label for="newOrderEmployee">Employee</label>
+      <select id="newOrderEmployee" name="newOrderEmployee">
+        <div>
+          <option value="">Choose </option>
+          <% employees.forEach(function(employee) { %>
+          <option value="<%= employee.email %>"><%= employee.firstName %> <%= employee.lastName %></option>
+          <% }); %>
+        </div>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="newOrderProduct">Email</label>
+      <input type="text" class="form-control" id="newOrderProduct" name="newOrderProduct"placeholder="Product">
+    </div>
+    <div class="form-group">
+      <select id="newOrderStatus" name="newOrderStatus">
+        <div>
+          <option value="">Choose </option>
+          <% statuses.forEach(function(status) { %>
+          <option value="<%= status %>"><%= status %></option>
+          <% }); %>
+        </div>
+      </select>
+    </div>
+    <div>
+      <button type="submit" class="btn btn-primary" id="createNewOrder">Submit</button>
+    </div>
+  </form>
+  <script>
+    $(document).ready(function() {
+      // var par = $('p');
+      $("#newOrderForm").hide();
+      $("#newOrder").click(function () {
+        $("#newOrderForm").slideToggle("slow");
+      });
+    });
+    $("createNewOrder").click(function() {
+      $.ajax({
+        type: "POST",
+        url: "/order/create",
+        data: '{client: "' + $("#newOrderClient").val() + '", employee: "' + $("#newOrderEmployee").val() + '", product: "' + $("#newOrderProduct").val() + '", status: "' + $("#newOrderStatus").val() + '"}',
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function (response) {
+          alert("Hello: " + response.client + " .\nCurrent Date and Time: " + response.DateTime);
+        },
+        failure: function (response) {
+          alert(response.responseText);
+        },
+        error: function (response) {
+          alert(response.responseText);
+        },
+      });
+    });
+  </script>
+  <% } else{ %>
+  <% } %>
+</div>
+
+

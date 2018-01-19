@@ -4,82 +4,105 @@
  * @description :: Server-side logic for managing Users
  * @help        :: See http://sailsjs.org/#!/documentation/concepts/Controllers
  */
-//var orderController = require('./OrderController');
+var bcrypt = require('bcrypt');
 
 module.exports = {
   show: function(req, res){
     var params = req.params.all()
-    var email = req.param("email");
-    console.log(email);
-   //var params = res.locals.user;
+    var email = req.session.email;
+    console.log(req.session.passport);
 
-    User.findOne({email: params.email}).exec(function createCB(err,result) {
+    User.findOne({email: params.email}).exec(function createCB(err, user) {
 
-        console.log(result);
       if (err) {
         return res.serverError(err);
       }
-    //if (result) {
-       // Mailer.sendWelcomeMail(result); }
-      //region wyszukiwanie orderów danego usera
-      Order.find({employee: result.email}).exec(function createCB(err,orders){
-
-        if(err) return err;
-        console.log(orders);
-        res.view('user', {result:result,orders:orders}); //done
-
-
-      });
-
-    });
-  },
-  /*create: function(req, res){
-    var params = req.params.all()
-           if (result) {
-          Mailer.sendWelcomeMail(result);
-          res.json(200, {result: result});
+      User.find({role: "employee"}).exec(function findEmployees(err, employees )
+      {
+        if (err) {
+          return res.serverError(err);
         }
-    User.create({name: params.name}).exec(function createCB(err,created){
-      return res.json({
-        notice: 'Created user with name ' + created.name
+        Order.find({
+          or: [
+            {client: email},
+            {employee: email}
+          ]
+        }).exec(function createCB(err, orders) {
+          var statuses = Order.attributes.status.enum;
+          if (err) {
+            return res.serverError(err);
+          }
+          res.view('user', {user: user, orders: orders, statuses: statuses, employees: employees}); //done
+        });
       });
     });
   },
-  login: function (req, res) {
-
-    User.findOne({email: req.param('email')}).exec(function createCB(err,result){
-      / return res.json({
-          notice: 'Found id: ' + result._id
-        });
+  create: function(req, res){
+    //var params = req.params.all()
+    var params = req.body;
+    User.create({email: params.newUserEmail, firstName: params.newUserFirstName, lastName: params.newUserLastName, phone: params.newUserPhone, password: params.newUserPassword}).exec(function createCB(err,created){
+      if (err) {
+        return res.serverError(err);
+      }
+      return res.redirect('back');
     });
-    // See `api/responses/login.js`
-    return res.login({
-      email: req.param('email'),
-      password: req.param('password'),
-      /*name: 'result.firstName',
-      lastName: 'result.lastName',
-      _id: 'result._id',
-     successRedirect: '/user',
-      invalidRedirect: '/login',
-
-    });
-
   },
-  logout: function (req, res) {
 
-    // "Forget" the user from the session.
-    // Subsequent requests from this user agent will NOT have `req.session.me`.
-    req.session.me = null;
+  me: function(req, res){
+    var email = req.session.email;
 
-    // If this is not an HTML-wanting browser, e.g. AJAX/sockets/cURL/etc.,
-    // send a simple response letting the user agent know they were logged out
-    // successfully.
-    if (req.wantsJSON) {
-      return res.ok('Logged out successfully!');
+    User.findOne({email: email}).exec(function update(err, user) {
+      if (err) {
+        return res.serverError(err);
+      }
+      return res.view('user/me', {user: user});
+    });
+  },
+
+update: function(req, res){
+  var params = req.params.all();
+  var email = req.session.email;
+  var body = req.body;
+  console.log(body);
+  User.findOne({email: email}).exec(function update(err, user) {
+    if (err) {
+      return res.serverError(err);
     }
+    user.firstName = body.firstName;
+    user.lastName = body.lastName;
+    user.phone = body.phone;
+    user.email = body.email;
+    var hashPass;
+    if(body.newPassword !== "") {
+      function f(user, cb) {
+        bcrypt.genSalt(10, function (err, salt) {
+          bcrypt.hash(body.password, salt, function (err, hash) {
+            if (err) {
+              console.log(err);
 
-    // Otherwise if this is an HTML-wanting browser, do a redirect.
-    return res.redirect('/');
-  }*/
+            } else {
+              bcrypt.compare(user.password, hash, function (err, res) {
+                if (!res) return console.log("compare nieudany");
+                //return res.json({message: 'Invalid Password'});
+                console.log(hash);
+                cb(null, user);
+              });
+            }
+          });
+
+        });
+      }
+    }
+    console.log(body.newPassword);
+    if(body.newPassword === body.newPasswordConfirm) {
+    user.password = body.newPassword; }
+    //console.log(user);
+    user.save(function(err){
+      console.log('success!');
+    });
+    return res.redirect('back');
+
+  });
+}
 };
 

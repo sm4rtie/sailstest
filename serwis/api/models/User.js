@@ -31,6 +31,7 @@ module.exports = {
     },
     phone: {
       type: 'string',
+      defaultsTo: '555-555-555'
       //required: false
     },
     toJSON: function() {
@@ -43,6 +44,20 @@ module.exports = {
   },
 
   beforeCreate: function(user, cb) {
+    bcrypt.genSalt(10, function(err, salt) {
+      bcrypt.hash(user.password, salt, function(err, hash) {
+        if(err) {
+          console.log(err);
+          cb(err);
+        } else {
+          user.password = hash;
+          console.log(hash);
+          cb(null, user);
+        }
+      });
+    });
+  },
+  beforeUpdate: function(user, cb) {
     bcrypt.genSalt(10, function(err, salt) {
       bcrypt.hash(user.password, salt, function(err, hash) {
         if(err) {

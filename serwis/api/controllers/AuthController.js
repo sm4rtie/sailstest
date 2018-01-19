@@ -3,7 +3,10 @@ var passport = require('passport');
 module.exports = {
 
   login: function(req, res) {
-    res.view();
+    if(req.isAuthenticated()) {
+      return res.redirect('/User?email='+req.session.email)
+    }
+    else res.view();
   },
   process: function(req, res) {
     passport.authenticate('local', function(err, user, info) {
@@ -19,6 +22,10 @@ module.exports = {
           message: 'login successful'
         });*/
         //return res.json(user);
+        req.session.email = user.email;
+        req.session.firstName = user.firstName;
+        req.session.lastName = user.lastName;
+        req.session.role = user.role;
         res.redirect('/User?email='+user.email);
       });
     }) (req, res);
@@ -26,6 +33,7 @@ module.exports = {
 
   logout: function(req, res) {
     req.logOut();
+    req.session.email = "";
     res.send('logout successful');
   }
 };

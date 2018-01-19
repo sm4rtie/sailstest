@@ -1,20 +1,36 @@
 module.exports = {
   create: function(req, res){
-    var params = req.params.all()
-    Contact.create({employee: params.employee, client: params.client, status: params.status}).exec(function createCB(err,created){
-      return res.json({
-        notice: 'Created user with name ' + created.name
-      });
+    var params = req.body;
+    console.log(params)
+    Order.create({client: params.newOrderClient, employee: params.newOrderEmployee, product: params.newOrderProduct, status: params.newOrderStatus}).exec(function createCB(err,created){
+      if (err) {
+        return res.serverError(err);
+      }
+      return res.redirect('back')
     });
   },
   findOrders: function(email){
-   // var params = req.params.all();
     Order.find({client: email}).exec(function createCB(err,orders){
-     // console.log(email);
-     // console.log(orders);
-      if(err) return err;
+      if (err) {
+        return res.serverError(err);
+      }
       return orders;
-      //res.view('order', {orders: orders})
     });
+  },
+  update: function(req, res){
+    var params = req.body;
+    Order.findOne({id: params.orderId}).exec(function update(err, order){
+      if (err) {
+        return res.serverError(err);
+      }
+      order.status = params.updateStatus;
+      order.save(function(err){
+        if (err) {
+          return res.serverError(err);
+        }
+        console.log('Status updated to '+order.status);
+      });
+    });
+    res.redirect('back');
   }
 };

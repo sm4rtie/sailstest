@@ -38,8 +38,13 @@ module.exports.routes = {
   //'post /User': 'UserController.create',
   'post /Contact': 'ContactController.create',
   //'post /Contact': 'OrderController.create',
-  'get /User': 'UserController.show', //gdzie to sie wywołane, w którym miejscu t
-  'get /contact': {view: 'contact'},
+  'get /User': 'UserController.show',
+  'get /contact': 'ContactController.findOrders',
+  'post /user/create' : 'UserController.create',
+  'post /order/create' : 'OrderController.create',
+  'post /order/update' : 'OrderController.update',
+  'get /user/me' : 'UserController.me',
+  'post /user/me' : 'UserController.update',
 
   'GET /login': {
     controller: 'AuthController',

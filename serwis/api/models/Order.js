@@ -3,10 +3,13 @@ module.exports = {
 
   attributes: {
     employee : {
-      type : 'user'
+      model : 'user'
     },
     client: {
-      type: 'user'
+      model: 'user'
+    },
+    product:{
+      type: 'string'
     },
     status: {
       type: 'string',
